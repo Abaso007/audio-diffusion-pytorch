@@ -41,17 +41,16 @@ def pad_dims(x: Tensor, ndim: int) -> Tensor:
 def clip(x: Tensor, dynamic_threshold: float = 0.0):
     if dynamic_threshold == 0.0:
         return x.clamp(-1.0, 1.0)
-    else:
-        # Dynamic thresholding
-        # Find dynamic threshold quantile for each batch
-        x_flat = rearrange(x, "b ... -> b (...)")
-        scale = torch.quantile(x_flat.abs(), dynamic_threshold, dim=-1)
-        # Clamp to a min of 1.0
-        scale.clamp_(min=1.0)
-        # Clamp all values and scale
-        scale = pad_dims(scale, ndim=x.ndim - scale.ndim)
-        x = x.clamp(-scale, scale) / scale
-        return x
+    # Dynamic thresholding
+    # Find dynamic threshold quantile for each batch
+    x_flat = rearrange(x, "b ... -> b (...)")
+    scale = torch.quantile(x_flat.abs(), dynamic_threshold, dim=-1)
+    # Clamp to a min of 1.0
+    scale.clamp_(min=1.0)
+    # Clamp all values and scale
+    scale = pad_dims(scale, ndim=x.ndim - scale.ndim)
+    x = x.clamp(-scale, scale) / scale
+    return x
 
 
 def extend_dim(x: Tensor, dim: int):
@@ -281,7 +280,7 @@ class ARVSampler(Sampler):
         num_shifts = num_chunks  # - self.num_splits
         progress_bar = tqdm(range(num_shifts), disable=not show_progress)
 
-        for j in progress_bar:
+        for _ in progress_bar:
             # Decrease ladder noise of last n chunks
             updated = self.sample_loop(
                 current=torch.cat(chunks[-n:], dim=-1), sigmas=sigmas, **kwargs
@@ -292,7 +291,7 @@ class ARVSampler(Sampler):
             shape = (b, self.in_channels, self.split_length)
             chunks += [torch.randn(shape, device=self.device)]
 
-        return torch.cat(chunks[:num_chunks], dim=-1)
+        return torch.cat(chunks[:num_shifts], dim=-1)
 
 
 """  Inpainters """

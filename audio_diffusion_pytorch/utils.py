@@ -21,7 +21,7 @@ def iff(condition: bool, value: T) -> Optional[T]:
 
 
 def is_sequence(obj: T) -> TypeGuard[Union[list, tuple]]:
-    return isinstance(obj, list) or isinstance(obj, tuple)
+    return isinstance(obj, (list, tuple))
 
 
 def default(val: Optional[T], d: Union[Callable[..., T], T]) -> T:
@@ -33,9 +33,7 @@ def default(val: Optional[T], d: Union[Callable[..., T], T]) -> T:
 def to_list(val: Union[T, Sequence[T]]) -> List[T]:
     if isinstance(val, tuple):
         return list(val)
-    if isinstance(val, list):
-        return val
-    return [val]  # type: ignore
+    return val if isinstance(val, list) else [val]
 
 
 def prod(vals: Sequence[int]) -> int:
